@@ -20,3 +20,26 @@ export interface ApiError {
   detail: string
   status_code?: number
 }
+
+// T048: ChatMessage type for agent chat interface
+export interface ChatMessage {
+  id: string
+  sender: "user" | "agent"
+  text: string
+  timestamp: Date
+  actionPerformed?: "create" | "read" | "update" | "delete" | "query" | "none"
+  todosAffected?: number[]
+  clarificationNeeded?: boolean
+  clarificationPrompt?: string
+}
+
+// T048: ChatResponse type from backend API
+export interface ChatResponse {
+  success: boolean
+  message: string
+  action_performed?: string | null
+  todos_affected?: number[] | null
+  clarification_needed?: boolean
+  clarification_prompt?: string | null
+  session_id: string
+}

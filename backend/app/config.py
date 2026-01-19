@@ -29,9 +29,13 @@ class Settings(BaseSettings):
     db_pool_size: int = 10
     db_max_overflow: int = 20
 
+    # Gemini API Key (for chat functionality)
+    gemini_api_key: Optional[str] = None
+
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "allow"
 
 
 # Create settings instance

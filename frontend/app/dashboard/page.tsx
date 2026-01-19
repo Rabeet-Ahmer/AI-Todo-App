@@ -134,11 +134,13 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <div className="space-y-4 animate-slide-up" style={{ animationDelay: '400ms', animationFillMode: 'both' }}>
-        <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-primary border-l-2 border-primary pl-3">
-          Tactical Briefing
-        </h3>
-        <Card className="bg-charcoal border-border-subtle rounded-none p-6 transition-all-fast hover:border-primary/30">
+      <div className="">
+        {/* Left Column - Tactical Briefing */}
+        <div className="space-y-4 animate-slide-up" style={{ animationDelay: '400ms', animationFillMode: 'both' }}>
+          <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-primary border-l-2 border-primary pl-3">
+            Tactical Briefing
+          </h3>
+          <Card className="bg-charcoal border-border-subtle rounded-none p-6 transition-all-fast hover:border-primary/30 h-full w-fullrtha">
           <div className="space-y-6">
             {/* High Priority Section */}
             {highPriorityTodos.length > 0 && (
@@ -209,6 +211,23 @@ export default async function DashboardPage() {
             )}
           </div>
         </Card>
+        </div>
+
+        {/* Right Column - Agent Chat Interface
+        <div className="space-y-4 animate-slide-up" style={{ animationDelay: '500ms', animationFillMode: 'both' }}>
+          <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-blue-400 border-l-2 border-blue-400 pl-3">
+            Agent Interface
+          </h3>
+          <div className="h-full">
+            {/* ChatInterface is a Client Component wrapper 
+            <div className="h-full">
+              {/* Placeholder will be replaced by dynamic import 
+              <div className="text-xs text-gray-600 text-center p-8 italic font-mono">
+                Loading AI assistant...
+              </div>
+            </div>
+          </div>
+        </div> */}
       </div>
     </div>
   )

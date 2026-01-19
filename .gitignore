@@ -8,4 +8,31 @@ __pycache__/
 
 # Env
 .env
-.env.**
+.env.**dist/
+build/
+*.log
+
+# Python additional
+venv/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.coverage
+
+# Agent sessions
+.agent-sessions/
+
+# Env additional
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

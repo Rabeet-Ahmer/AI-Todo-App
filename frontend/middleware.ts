@@ -1,31 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // Manually check for the session cookie to avoid importing non-Edge compatible libraries
-  const sessionCookie = request.cookies.get("better-auth.session_token") || request.cookies.get("__Secure-better-auth.session_token");
-  const { pathname } = request.nextUrl;
+  try {
+    // Manually check for the session cookie to avoid importing non-Edge compatible libraries
+    const sessionCookie = request.cookies.get("better-auth.session_token") || request.cookies.get("__Secure-better-auth.session_token");
+    const { pathname } = request.nextUrl;
 
-  // Redirect authenticated users from login/signup pages
-  if (sessionCookie && ['/login', '/register'].includes(pathname)) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    // Redirect authenticated users from login/signup pages
+    if (sessionCookie && ['/login', '/register'].includes(pathname)) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+
+    // Protect dashboard routes
+    if (!sessionCookie && pathname.startsWith('/dashboard')) {
+      // Store the attempted URL for redirect after login
+      const redirectUrl = encodeURIComponent(request.url);
+      return NextResponse.redirect(new URL(`/login?redirect=${redirectUrl}`, request.url));
+    }
+
+    // Check for expired session by attempting to validate the token
+    // If the session cookie exists but is invalid/expired, redirect to login
+    if (sessionCookie && pathname.startsWith('/dashboard')) {
+      // We'll validate the session by checking if the API call succeeds
+      // This is handled in the requireAuth function in auth.actions.ts
+      // The middleware will allow the request to proceed and let the server components handle validation
+    }
+
+    return NextResponse.next();
+  } catch (error) {
+    console.error("Middleware error:", error);
+    return NextResponse.next();
   }
-
-  // Protect dashboard routes
-  if (!sessionCookie && pathname.startsWith('/dashboard')) {
-    // Store the attempted URL for redirect after login
-    const redirectUrl = encodeURIComponent(request.url);
-    return NextResponse.redirect(new URL(`/login?redirect=${redirectUrl}`, request.url));
-  }
-
-  // Check for expired session by attempting to validate the token
-  // If the session cookie exists but is invalid/expired, redirect to login
-  if (sessionCookie && pathname.startsWith('/dashboard')) {
-    // We'll validate the session by checking if the API call succeeds
-    // This is handled in the requireAuth function in auth.actions.ts
-    // The middleware will allow the request to proceed and let the server components handle validation
-  }
-
-  return NextResponse.next();
 }
 
 // Define which paths the middleware should run on

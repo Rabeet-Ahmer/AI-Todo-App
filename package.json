@@ -1,9 +1,0 @@
-{
-  "devDependencies": {
-    "@types/pg": "^8.16.0",
-    "shadcn": "^3.6.2"
-  },
-  "dependencies": {
-    "pg": "^8.16.3"
-  }
-}

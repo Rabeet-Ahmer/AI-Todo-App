@@ -1,60 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * Edge-compatible middleware for route protection.
- * Uses direct cookie access instead of better-auth/cookies helper
- * to ensure compatibility with Vercel Edge runtime.
+ * Minimal middleware for route protection.
+ * Using Node.js runtime for better compatibility with cookie operations.
  */
 export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  // Check for Better Auth session cookie
+  const cookies = request.cookies;
+  let hasSessionCookie = false;
+  
   try {
-    const { pathname } = request.nextUrl;
-
-    // Check for Better Auth session cookie (Edge-compatible)
-    // Better Auth typically uses cookies starting with 'better-auth.'
-    // Common names: 'better-auth.session_token' or 'better-auth.session'
-    const allCookies = request.cookies.getAll();
-    const hasSessionCookie = allCookies.some(
-      (cookie) => cookie.name.startsWith('better-auth.')
-    );
-
-    // Redirect authenticated users from login/signup pages
-    if (hasSessionCookie && ['/login', '/register'].includes(pathname)) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+    for (const cookie of cookies.getAll()) {
+      if (cookie.name.startsWith('better-auth.')) {
+        hasSessionCookie = true;
+        break;
+      }
     }
+  } catch (e) {
+    // If cookie reading fails, assume no session
+    hasSessionCookie = false;
+  }
 
-    // Protect dashboard routes
-    if (!hasSessionCookie && pathname.startsWith('/dashboard')) {
-      // Store the attempted URL for redirect after login
+  // Redirect authenticated users from login/signup pages
+  if (hasSessionCookie && (pathname === '/login' || pathname === '/register')) {
+    try {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    } catch (e) {
+      return NextResponse.next();
+    }
+  }
+
+  // Protect dashboard routes
+  if (!hasSessionCookie && pathname.startsWith('/dashboard')) {
+    try {
       const redirectUrl = encodeURIComponent(request.url);
       return NextResponse.redirect(new URL(`/login?redirect=${redirectUrl}`, request.url));
+    } catch (e) {
+      return NextResponse.next();
     }
-
-    // Note: Session validation (expired/invalid tokens) is handled by
-    // requireAuth() in server actions/components, not in middleware.
-    // Middleware only checks for cookie presence for routing decisions.
-
-    return NextResponse.next();
-  } catch (error) {
-    // Log error in production for debugging
-    console.error('Middleware error:', error);
-    // Allow request to proceed on error to avoid blocking all traffic
-    // Server-side auth checks will handle validation
-    return NextResponse.next();
   }
+
+  return NextResponse.next();
 }
 
-// Define which paths the middleware should run on
+// Simplified matcher - only match specific routes that need protection
+// Using Node.js runtime instead of Edge to avoid compatibility issues
 export const config = {
+  runtime: 'nodejs', // Use Node.js runtime instead of Edge for better compatibility
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-    // Also protect the dashboard routes
     '/dashboard/:path*',
     '/login',
     '/register'

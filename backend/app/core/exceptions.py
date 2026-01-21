@@ -37,7 +37,7 @@ class TodoAccessDeniedException(TodoException):
 class UserNotFoundException(TodoException):
     """Raised when a user is not found"""
 
-    def __init__(self, user_id: int):
+    def __init__(self, user_id: str):
         super().__init__(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User with ID {user_id} not found"

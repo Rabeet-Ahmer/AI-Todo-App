@@ -134,100 +134,83 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <div className="">
-        {/* Left Column - Tactical Briefing */}
+      <div>
         <div className="space-y-4 animate-slide-up" style={{ animationDelay: '400ms', animationFillMode: 'both' }}>
           <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-primary border-l-2 border-primary pl-3">
             Tactical Briefing
           </h3>
           <Card className="bg-charcoal border-border-subtle rounded-none p-6 transition-all-fast hover:border-primary/30 h-full w-fullrtha">
-          <div className="space-y-6">
-            {/* High Priority Section */}
-            {highPriorityTodos.length > 0 && (
-              <>
-                <div className="flex gap-4 items-start">
-                  <div className="mt-1 h-3 w-3 bg-primary animate-pulse" />
-                  <div>
-                    <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-2">Critical Objectives</h4>
-                    <div className="space-y-2">
-                      {highPriorityTodos.map(todo => (
-                        <p key={todo.id} className="text-xs text-gray-400 font-mono leading-relaxed max-w-2xl">
-                          {todo.title}
-                          {todo.description && <span className="text-gray-500 ml-2">— {todo.description}</span>}
-                        </p>
-                      ))}
+            <div className="space-y-6">
+              {/* High Priority Section */}
+              {highPriorityTodos.length > 0 && (
+                <>
+                  <div className="flex gap-4 items-start">
+                    <div className="mt-1 h-3 w-3 bg-primary animate-pulse" />
+                    <div>
+                      <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-2">Critical Objectives</h4>
+                      <div className="space-y-2">
+                        {highPriorityTodos.map(todo => (
+                          <p key={todo.id} className="text-xs text-gray-400 font-mono leading-relaxed max-w-2xl">
+                            {todo.title}
+                            {todo.description && <span className="text-gray-500 ml-2">— {todo.description}</span>}
+                          </p>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="h-px bg-border-subtle w-full" />
-              </>
-            )}
+                  <div className="h-px bg-border-subtle w-full" />
+                </>
+              )}
 
-            {/* Recent Activity Section */}
-            <div className="flex gap-4 items-start">
-              <div className="mt-1 h-3 w-3 bg-blue-500" />
-              <div>
-                <h4 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">Recent Activity</h4>
-                {recentTodos.length > 0 ? (
-                  <div className="space-y-2">
-                    {recentTodos.map(todo => (
-                      <div key={todo.id} className="flex items-center gap-2">
-                        {todo.completed ? (
-                          <CheckCircle className="size-3 text-green-500 shrink-0" />
-                        ) : (
-                          <AlertCircle className="size-3 text-yellow-500 shrink-0" />
-                        )}
-                        <p className="text-xs text-gray-400 font-mono leading-relaxed max-w-2xl">
-                          {todo.title}
-                          <span className="text-gray-500 ml-2">
-                            — {new Date(todo.created_at).toLocaleDateString()}
-                          </span>
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-gray-500 font-mono leading-relaxed max-w-2xl">
-                    No recent activity. Initialize new objectives to begin tracking.
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Empty State */}
-            {todos.length === 0 && (
-              <>
-                <div className="h-px bg-border-subtle w-full" />
-                <div className="flex gap-4 items-start opacity-70">
-                  <div className="mt-1 h-3 w-3 bg-gray-600" />
-                  <div>
-                    <h4 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">System Ready</h4>
+              {/* Recent Activity Section */}
+              <div className="flex gap-4 items-start">
+                <div className="mt-1 h-3 w-3 bg-blue-500" />
+                <div>
+                  <h4 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">Recent Activity</h4>
+                  {recentTodos.length > 0 ? (
+                    <div className="space-y-2">
+                      {recentTodos.map(todo => (
+                        <div key={todo.id} className="flex items-center gap-2">
+                          {todo.completed ? (
+                            <CheckCircle className="size-3 text-green-500 shrink-0" />
+                          ) : (
+                            <AlertCircle className="size-3 text-yellow-500 shrink-0" />
+                          )}
+                          <p className="text-xs text-gray-400 font-mono leading-relaxed max-w-2xl">
+                            {todo.title}
+                            <span className="text-gray-500 ml-2">
+                              — {new Date(todo.created_at).toLocaleDateString()}
+                            </span>
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
                     <p className="text-xs text-gray-500 font-mono leading-relaxed max-w-2xl">
-                      No objectives in database. Navigate to the operations terminal to initialize your first task.
+                      No recent activity. Initialize new objectives to begin tracking.
                     </p>
-                  </div>
+                  )}
                 </div>
-              </>
-            )}
-          </div>
-        </Card>
-        </div>
-
-        {/* Right Column - Agent Chat Interface
-        <div className="space-y-4 animate-slide-up" style={{ animationDelay: '500ms', animationFillMode: 'both' }}>
-          <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-blue-400 border-l-2 border-blue-400 pl-3">
-            Agent Interface
-          </h3>
-          <div className="h-full">
-            {/* ChatInterface is a Client Component wrapper 
-            <div className="h-full">
-              {/* Placeholder will be replaced by dynamic import 
-              <div className="text-xs text-gray-600 text-center p-8 italic font-mono">
-                Loading AI assistant...
               </div>
+
+              {/* Empty State */}
+              {todos.length === 0 && (
+                <>
+                  <div className="h-px bg-border-subtle w-full" />
+                  <div className="flex gap-4 items-start opacity-70">
+                    <div className="mt-1 h-3 w-3 bg-gray-600" />
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">System Ready</h4>
+                      <p className="text-xs text-gray-500 font-mono leading-relaxed max-w-2xl">
+                        No objectives in database. Navigate to the operations terminal to initialize your first task.
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
-          </div>
-        </div> */}
+          </Card>
+        </div>
       </div>
     </div>
   )

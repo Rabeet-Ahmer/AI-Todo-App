@@ -33,29 +33,42 @@ Next.js Frontend (Better Auth + UI)
 ```
 backend/
 ├── app/
+│   ├── __init__.py
 │   ├── main.py              # FastAPI app, CORS, exception handlers
 │   ├── config.py            # Pydantic settings (DB, JWT config)
 │   ├── models/              # SQLModel (Database layer)
+│   │   ├── __init__.py
 │   │   ├── user.py          # Better Auth's users table (read-only)
 │   │   └── todo.py          # Todos table (owned by FastAPI)
 │   ├── schemas/             # Pydantic (API contracts)
-│   │   ├── todo.py          # TodoCreate, TodoUpdate, TodoResponse
-│   │   └── common.py        # Shared schemas
-│   ├── api/v1/              # API routes
-│   │   ├── router.py        # Main v1 router
-│   │   ├── todos.py         # Todo CRUD endpoints
-│   │   ├── stats.py         # Todo statistics endpoint
-│   │   ├── auth.py          # /auth/me endpoint
-│   │   └── deps.py          # get_current_user, get_session
+│   │   ├── __init__.py
+│   │   ├── todo.py          # TodoCreate, TodoUpdate, TodoResponse, TodoStats
+│   │   └── common.py        # ErrorResponse, PaginationParams
+│   ├── api/                 # API routes
+│   │   ├── __init__.py
+│   │   ├── deps.py          # get_current_user, get_session dependencies
+│   │   └── v1/
+│   │       ├── __init__.py
+│   │       ├── router.py    # Main v1 router
+│   │       ├── todos.py     # Todo CRUD endpoints
+│   │       ├── stats.py     # Todo statistics endpoint
+│   │       └── auth.py      # /auth/me endpoint
 │   ├── services/            # Business logic
+│   │   ├── __init__.py
 │   │   └── todo_service.py  # Todo CRUD operations
 │   ├── core/                # Utilities
-│   │   ├── security.py      # JWT validation
-│   │   └── exceptions.py    # Custom exceptions
+│   │   ├── __init__.py
+│   │   ├── security.py      # JWT validation (verify_token, extract_user_id_from_token)
+│   │   └── exceptions.py    # Custom exceptions + handlers
 │   └── db/
+│       ├── __init__.py
 │       └── session.py       # Async DB session factory (Neon)
 ├── pyproject.toml           # UV dependencies
-└── uv.lock
+├── uv.lock
+├── .env                     # Environment variables (gitignored)
+├── .python-version          # Python 3.13
+├── CLAUDE.md                # This file
+└── README.md
 ```
 
 ### 2. Database Models
@@ -63,9 +76,10 @@ backend/
 **User Model** (app/models/user.py) - **READ-ONLY**, owned by Better Auth:
 ```python
 class User(SQLModel, table=True):
-    id: str = Field(primary_key=True)  # String ID from Better Auth
-    email: str = Field(index=True, unique=True)
-    name: Optional[str] = None
+    id: str = Field(primary_key=True)  # String UUID from Better Auth
+    email: str = Field(index=True, unique=True, max_length=255)
+    name: Optional[str] = Field(default=None, max_length=255)
+    image: Optional[str] = Field(default=None)
     email_verified: bool = Field(default=False)
     created_at: datetime
     updated_at: datetime
@@ -76,42 +90,39 @@ class User(SQLModel, table=True):
 ```python
 class Todo(SQLModel, table=True):
     id: Optional[int] = Field(primary_key=True)
-    title: str = Field(max_length=200)
+    title: str = Field(index=True, max_length=200)
     description: Optional[str] = Field(max_length=1000)
     completed: bool = Field(default=False, sa_column=Column("is_completed", Boolean))
     priority: str = Field(default="MEDIUM")  # LOW, MEDIUM, HIGH
     created_at: datetime
     updated_at: datetime
-    user_id: str = Field(foreign_key="user.id", index=True)  # FK to Better Auth
+    user_id: str = Field(foreign_key="user.id", index=True)
     user: "User" = Relationship(back_populates="todos")
 ```
 
 **Key Notes:**
 - User ID is `string` (Better Auth generates UUIDs)
 - Todo `completed` maps to DB column `is_completed`
-- Priority column: LOW/MEDIUM/HIGH
+- Priority values: LOW, MEDIUM, HIGH
 
 ### 3. Authentication Flow
 
-**JWT Validation** (app/api/v1/deps.py):
+**JWT Validation** (app/api/deps.py):
 ```python
-security = HTTPBearer()
-
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    session: AsyncSession = Depends(get_session)
+    payload: Annotated[dict, Depends(verify_token)],
+    session: Annotated[AsyncSession, Depends(get_session)]
 ) -> User:
-    # 1. Extract token from Authorization: Bearer <token>
-    # 2. Decode using shared SECRET_KEY
-    # 3. Extract user_id from payload["sub"]
-    # 4. Query Better Auth's users table
-    # 5. Return User object or raise 401
+    # 1. verify_token decodes JWT using shared SECRET_KEY
+    # 2. Extract user_id from payload["sub"]
+    # 3. Query Better Auth's users table
+    # 4. Return User object or raise 401
 ```
 
 **Security Configuration** (app/core/security.py):
 ```python
 SECRET_KEY = os.getenv("JWT_SECRET_KEY") or os.getenv("BETTER_AUTH_SECRET")
-ALGORITHM = "HS256"
+ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 ```
 
 ### 4. API Endpoints
@@ -124,16 +135,16 @@ router.include_router(stats.router)   # /users/me/todos/stats
 ```
 
 **Todo Endpoints** (app/api/v1/todos.py):
-- `GET /todos` - List user's todos
-- `POST /todos` - Create todo
-- `PATCH /todos/{id}` - Update todo
-- `DELETE /todos/{id}` - Delete todo
+- `GET /api/v1/todos` - List user's todos
+- `POST /api/v1/todos` - Create todo (201)
+- `PATCH /api/v1/todos/{id}` - Update todo
+- `DELETE /api/v1/todos/{id}` - Delete todo (204)
 
 **Stats Endpoint** (app/api/v1/stats.py):
-- `GET /users/me/todos/stats` - Get todo statistics (total, pending, completed)
+- `GET /api/v1/users/me/todos/stats` - Get todo statistics (total, pending, completed)
 
 **Auth Endpoint** (app/api/v1/auth.py):
-- `GET /auth/me` - Get current user profile
+- `GET /api/v1/auth/me` - Get current user profile
 
 ### 5. Service Layer
 
@@ -183,10 +194,11 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 **Custom Exceptions** (app/core/exceptions.py):
 ```python
-class TodoNotFoundException(TodoException):  # 404
-class TodoAccessDeniedException(TodoException):  # 403
-class UnauthorizedException(TodoException):  # 401
-class ValidationException(TodoException):  # 422
+class TodoNotFoundException(TodoException):    # 404
+class TodoAccessDeniedException(TodoException): # 403
+class UserNotFoundException(TodoException):     # 404 (user_id: str)
+class UnauthorizedException(TodoException):     # 401
+class ValidationException(TodoException):       # 422
 ```
 
 **Exception Handlers** (registered in main.py):
@@ -203,12 +215,17 @@ class Settings(BaseSettings):
     jwt_secret_key: str
     jwt_algorithm: str = "HS256"
     api_v1_prefix: str = "/api/v1"
+    host: str = "0.0.0.0"
+    port: int = 8000
+    environment: str = "development"
     cors_origins: str = "http://localhost:3000"
     db_pool_size: int = 10
     db_max_overflow: int = 20
 
     class Config:
         env_file = ".env"
+        case_sensitive = False
+        extra = "allow"
 ```
 
 ### 9. Main Application
@@ -217,6 +234,7 @@ class Settings(BaseSettings):
 ```python
 app = FastAPI(
     title="Todo Web App API",
+    description="Backend API for Todo Web App with Better Auth integration",
     version="1.0.0",
 )
 
@@ -271,25 +289,14 @@ async def health_check():
 ```toml
 [project]
 dependencies = [
+    "alembic>=1.17.2",
+    "asyncpg>=0.31.0",
     "fastapi[standard]>=0.128.0",
-    "sqlmodel>=0.0.31",
-    "asyncpg>=0.31.0",           # Async PostgreSQL driver
-    "python-jose[cryptography]",  # JWT validation
     "pydantic-settings>=2.12.0",
-    "alembic>=1.17.2",           # Migrations
+    "python-jose[cryptography]>=3.5.0",
+    "sqlmodel>=0.0.31",
 ]
 ```
-
----
-
-## Key Differences from CLAUDE.md Template
-
-1. **User ID is string, not int** - Better Auth uses UUID strings
-2. **Todo.completed maps to is_completed column** - Using `sa_column` mapping
-3. **Priority field added** - LOW/MEDIUM/HIGH values
-4. **Stats endpoint** - Dashboard statistics at `/users/me/todos/stats`
-5. **No Alembic setup yet** - Using SQLModel table creation
-6. **No password hashing** - Better Auth handles all auth
 
 ---
 

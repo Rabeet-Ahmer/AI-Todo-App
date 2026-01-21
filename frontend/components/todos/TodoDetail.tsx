@@ -1,4 +1,4 @@
-import { type Todo } from "@/lib/validations/todo.schema"
+import { type Todo } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, Clock, Calendar, Hash, ArrowLeft } from "lucide-react"
 import Link from "next/link"
@@ -35,9 +35,9 @@ export function TodoDetail({ todo }: TodoDetailProps) {
           </Badge>
           <Badge variant="outline" className={cn(
             "text-[10px] font-mono px-2 py-0.5 rounded-none uppercase tracking-widest",
-            todo.is_completed ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-blue-500/10 text-blue-500 border-blue-500/20"
+            todo.completed ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-blue-500/10 text-blue-500 border-blue-500/20"
           )}>
-            Status: {todo.is_completed ? "Executed" : "Active"}
+            Status: {todo.completed ? "Executed" : "Active"}
           </Badge>
         </div>
 

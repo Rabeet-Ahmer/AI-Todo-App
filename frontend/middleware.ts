@@ -1,55 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSessionCookie } from 'better-auth/cookies';
 
-/**
- * Minimal middleware for route protection.
- * Using Node.js runtime for better compatibility with cookie operations.
- */
 export function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
-
-  // Check for Better Auth session cookie
-  const cookies = request.cookies;
-  let hasSessionCookie = false;
-  
-  try {
-    for (const cookie of cookies.getAll()) {
-      if (cookie.name.startsWith('better-auth.')) {
-        hasSessionCookie = true;
-        break;
-      }
-    }
-  } catch (e) {
-    // If cookie reading fails, assume no session
-    hasSessionCookie = false;
-  }
+  const sessionCookie = getSessionCookie(request);
+  const { pathname } = request.nextUrl;
 
   // Redirect authenticated users from login/signup pages
-  if (hasSessionCookie && (pathname === '/login' || pathname === '/register')) {
-    try {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    } catch (e) {
-      return NextResponse.next();
-    }
+  if (sessionCookie && ['/login', '/register'].includes(pathname)) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   // Protect dashboard routes
-  if (!hasSessionCookie && pathname.startsWith('/dashboard')) {
-    try {
-      const redirectUrl = encodeURIComponent(request.url);
-      return NextResponse.redirect(new URL(`/login?redirect=${redirectUrl}`, request.url));
-    } catch (e) {
-      return NextResponse.next();
-    }
+  if (!sessionCookie && pathname.startsWith('/dashboard')) {
+    // Store the attempted URL for redirect after login
+    const redirectUrl = encodeURIComponent(request.url);
+    return NextResponse.redirect(new URL(`/login?redirect=${redirectUrl}`, request.url));
+  }
+
+  // Check for expired session by attempting to validate the token
+  // If the session cookie exists but is invalid/expired, redirect to login
+  if (sessionCookie && pathname.startsWith('/dashboard')) {
+    // We'll validate the session by checking if the API call succeeds
+    // This is handled in the requireAuth function in auth.actions.ts
+    // The middleware will allow the request to proceed and let the server components handle validation
   }
 
   return NextResponse.next();
 }
 
-// Simplified matcher - only match specific routes that need protection
-// Using Node.js runtime instead of Edge to avoid compatibility issues
+// Define which paths the middleware should run on
 export const config = {
-  runtime: 'nodejs', // Use Node.js runtime instead of Edge for better compatibility
   matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    // Also protect the dashboard routes
     '/dashboard/:path*',
     '/login',
     '/register'

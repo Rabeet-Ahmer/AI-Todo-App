@@ -1,419 +1,451 @@
 ---
-description: "Implementation tasks for AI Agent Chatbot feature"
+description: "Simplified implementation tasks for AI Agent Chatbot feature (v2.1)"
 ---
 
-# Tasks: AI Agent Chatbot for Todo Management
+# Tasks: AI Agent Chatbot for Todo Management (Simplified v2.1)
 
-**Input**: Design documents from `/specs/001-agent-chatbot/`
-**Prerequisites**: plan.md, spec.md, agent-architecture-plan.md
+**Input**: Simplified plan from `/specs/001-agent-chatbot/plan.md`
+**Prerequisites**: plan.md, spec.md
 
-**Tests**: Tests are NOT requested in the specification, so test tasks are excluded from this implementation plan.
+**Key Updates in v2.1**:
+- ✅ SQLite sessions for conversation history
+- ✅ Floating chat button with drawer UI
+- ✅ Casual agent tone
+- ✅ User-friendly error messages
 
-**Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
-
-## Format: `[ID] [P?] [Story] Description`
+## Format: `[ID] [P?] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
-- **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
 - Include exact file paths in descriptions
 
 ## Path Conventions
 
 - **Backend**: `backend/app/` for application code
 - **Frontend**: `frontend/` for Next.js application
-- **Tests**: `backend/app/tests/` and `frontend/__tests__/`
 
 ---
 
-## Phase 1: Setup (Shared Infrastructure)
+## Phase 1: Setup & Dependencies
 
-**Purpose**: Project initialization and dependencies for agent system
+**Purpose**: Install openai-agents and configure environment
 
-- [ ] T001 Install openai-agents package in backend: `uv add openai-agents` (or pip install openai-agents)
-- [ ] T002 [P] Create `.agent-sessions/` directory in backend root for SQLite session storage
-- [ ] T003 [P] Add `.agent-sessions/` to `.gitignore`
-- [ ] T004 [P] Set OPENAI_API_KEY environment variable in backend/.env
-- [ ] T005 [P] Update backend/pyproject.toml with openai-agents dependency if using uv
-
----
-
-## Phase 2: Foundational (Blocking Prerequisites)
-
-**Purpose**: Core agent infrastructure that MUST be complete before ANY user story can be implemented
-
-**⚠️ CRITICAL**: No user story work can begin until this phase is complete
-
-- [ ] T006 Create backend/app/agents/ module directory structure with __init__.py
-- [ ] T007 [P] Create backend/app/agents/config.py with agent configuration (model settings, API key loading)
-- [ ] T008 [P] Create backend/app/agents/models.py with Pydantic base models for tool inputs/outputs
-- [ ] T009 [P] Create backend/app/agents/sessions.py with SQLite session management functions
-- [ ] T010 Create backend/app/agents/guardrails.py with user_authorization_guardrail function
-- [ ] T011 [P] Add input_sanitization_guardrail to backend/app/agents/guardrails.py
-- [ ] T012 [P] Add rate_limit_guardrail to backend/app/agents/guardrails.py
-- [ ] T013 [P] Add todo_ownership_guardrail (output) to backend/app/agents/guardrails.py
-- [ ] T014 Create backend/app/agents/tools.py module with function tool decorators imported
-- [ ] T015 Create backend/app/agents/agents.py for agent definitions (empty structure)
-- [ ] T016 Create backend/app/agents/runner.py with basic agent execution wrapper
-- [ ] T017 Create backend/app/api/v1/chat.py with FastAPI router stub
-- [ ] T018 [P] Create frontend/components/chat/ directory for chat UI components
-- [ ] T019 [P] Create frontend/lib/validations/chat.schema.ts with Zod schemas for chat messages
-- [ ] T020 [P] Create frontend/hooks/useChat.ts hook structure (empty implementation)
-
-**Checkpoint**: Foundation ready - user story implementation can now begin in parallel
+- [ ] T001 Install openai-agents package: `uv add openai-agents` in backend/
+- [ ] T002 [P] Add OPENAI_API_KEY to backend/.env (required for agents SDK)
+- [ ] T003 [P] Create `backend/.agent-sessions/` directory for SQLite storage
+- [ ] T004 [P] Add `.agent-sessions/` to `backend/.gitignore`
 
 ---
 
-## Phase 3: User Story 1 - Natural Language Todo Creation (Priority: P1) 🎯 MVP
+## Phase 2: Backend - Chat Schemas
 
-**Goal**: Enable users to create todos through natural conversation on /dashboard
+**Purpose**: Create Pydantic schemas for chat API
 
-**Independent Test**: Log in, navigate to /dashboard, send "Add a task to test the chatbot", verify todo appears in user's list
-
-### Implementation for User Story 1
-
-#### Backend: TodoManagerAgent with Create Tool
-
-- [ ] T021 [P] [US1] Define CreateTodoInput Pydantic model in backend/app/agents/models.py
-- [ ] T022 [P] [US1] Define CreateTodoOutput Pydantic model in backend/app/agents/models.py
-- [ ] T023 [US1] Implement create_todo function tool in backend/app/agents/tools.py using @function_tool decorator
-- [ ] T024 [US1] Implement get_todos function tool in backend/app/agents/tools.py (needed for verification)
-- [ ] T025 [US1] Define TodoManagerAgent in backend/app/agents/agents.py with create_todo and get_todos tools
-- [ ] T026 [US1] Add TodoManagerAgent instructions for parsing natural language todo creation commands
-- [ ] T027 [US1] Attach guardrails (user_authorization, input_sanitization, rate_limit) to TodoManagerAgent
-- [ ] T028 [US1] Implement agent runner function in backend/app/agents/runner.py with session management
-- [ ] T029 [US1] Add exception handling (InputGuardrailTripwireTriggered, ModelBehaviorError) to runner
-
-#### Backend: Chat API Endpoints
-
-- [ ] T030 [US1] Implement POST /api/v1/chat/message endpoint in backend/app/api/v1/chat.py
-- [ ] T031 [US1] Extract user_id from authentication middleware in chat endpoint
-- [ ] T032 [US1] Create or retrieve session in chat endpoint using sessions.py functions
-- [ ] T033 [US1] Pass user_id context to Runner.run() in chat endpoint
-- [ ] T034 [US1] Return ChatResponse with message, action_performed, todos_affected fields
-- [ ] T035 [US1] Add error handling for guardrail triggers (401, 403, 429 errors)
-- [ ] T036 [US1] Register chat router in backend/app/main.py
-
-#### Frontend: Chat UI Components
-
-- [ ] T037 [P] [US1] Create ChatMessage.tsx Server Component in frontend/components/chat/
-- [ ] T038 [P] [US1] Create ChatInput.tsx Client Component with form validation in frontend/components/chat/
-- [ ] T039 [P] [US1] Create AgentStatus.tsx loading indicator component in frontend/components/chat/
-- [ ] T040 [US1] Create MessageList.tsx scrollable container in frontend/components/chat/
-- [ ] T041 [US1] Create ChatWindow.tsx Client Component orchestrating all chat UI in frontend/components/chat/
-- [ ] T042 [US1] Style chat components with TailwindCSS (message bubbles, input, loading states)
-
-#### Frontend: Chat State Management
-
-- [ ] T043 [US1] Implement useChat hook with messages state in frontend/hooks/useChat.ts
-- [ ] T044 [US1] Add sendMessage function to useChat hook calling POST /api/v1/chat/message
-- [ ] T045 [US1] Add isLoading state management to useChat hook
-- [ ] T046 [US1] Add error handling to useChat hook (network errors, auth errors, rate limits)
-- [ ] T047 [US1] Update frontend/lib/api-client.ts with chat API methods
-- [ ] T048 [US1] Add ChatMessage type to frontend/lib/types.ts
-
-#### Frontend: Dashboard Integration
-
-- [ ] T049 [US1] Update frontend/app/dashboard/page.tsx to import ChatWindow component
-- [ ] T050 [US1] Add ChatWindow to dashboard page layout (authenticated users only)
-- [ ] T051 [US1] Verify authentication check prevents unauthenticated access to chat UI
-
-**Checkpoint**: At this point, users can create todos via natural language chat on /dashboard
+- [ ] T005 Create `backend/app/schemas/chat.py` with:
+  - `ChatRequest(BaseModel)`: content (str)
+  - `ChatResponse(BaseModel)`: message (str), todos_affected (list[TodoResponse], optional)
+  - `ChatHistoryItem(BaseModel)`: role (str), content (str), timestamp (datetime)
 
 ---
 
-## Phase 4: User Story 2 - Todo Management via Chat (Priority: P2)
+## Phase 3: Backend - SQLite Session Management
 
-**Goal**: Enable users to update, complete, and delete todos through conversation
+**Purpose**: Session storage for conversation history (in chat.py)
 
-**Independent Test**: Create a todo, then send "Mark the test task as complete", "Update task X to be due tomorrow", "Delete task Y" and verify changes
+**Dependencies**: T003
 
-### Implementation for User Story 2
+- [ ] T006 Create SQLite session functions in `backend/app/api/v1/chat.py`:
+  - `init_session_db()`: Create sessions.db and table if not exists
+  - Table schema: `user_id TEXT PRIMARY KEY, session_data TEXT, created_at TEXT, updated_at TEXT`
 
-#### Backend: Additional CRUD Tools
+- [ ] T007 [P] Implement `get_user_session(user_id: str)` function:
+  - Returns existing session data (JSON) or None
+  - Query: `SELECT session_data FROM chat_sessions WHERE user_id = ?`
 
-- [ ] T052 [P] [US2] Define UpdateTodoInput Pydantic model in backend/app/agents/models.py
-- [ ] T053 [P] [US2] Define UpdateTodoOutput Pydantic model in backend/app/agents/models.py
-- [ ] T054 [P] [US2] Define DeleteTodoInput and DeleteTodoOutput models in backend/app/agents/models.py
-- [ ] T055 [P] [US2] Implement update_todo function tool in backend/app/agents/tools.py
-- [ ] T056 [P] [US2] Implement delete_todo function tool in backend/app/agents/tools.py
-- [ ] T057 [P] [US2] Implement search_todos function tool in backend/app/agents/tools.py
-- [ ] T058 [US2] Add update_todo, delete_todo, search_todos to TodoManagerAgent tools list
-- [ ] T059 [US2] Update TodoManagerAgent instructions to handle update, delete, and status change commands
-- [ ] T060 [US2] Add ownership verification in delete_todo tool (check user_id before deletion)
-- [ ] T061 [US2] Add confirmation prompt logic for delete operations in agent instructions
+- [ ] T008 [P] Implement `save_user_session(user_id: str, session_data: str)` function:
+  - Upsert session data (INSERT OR REPLACE)
+  - Update `updated_at` timestamp
 
-#### Frontend: Enhanced Chat Interactions
+- [ ] T009 [P] Implement `clear_user_session(user_id: str)` function:
+  - Delete session for user (for "clear chat" feature)
 
-- [ ] T062 [US2] Update ChatMessage component to display action_performed indicators (update, delete icons)
-- [ ] T063 [US2] Add todos_affected display to show which todos were modified in ChatMessage
-- [ ] T064 [US2] Update useChat hook to handle follow-up messages (session_id persistence)
-- [ ] T065 [US2] Add clarification prompt handling in ChatWindow (display agent questions)
-
-**Checkpoint**: At this point, users can create, read, update, and delete todos via chat
+- [ ] T010 Add session cleanup (delete sessions older than 24 hours):
+  - Can be called on app startup or as background task
+  - Query: `DELETE FROM chat_sessions WHERE updated_at < datetime('now', '-24 hours')`
 
 ---
 
-## Phase 5: User Story 3 - Conversational Todo Queries (Priority: P3)
+## Phase 4: Backend - Agent & Tools in chat.py
 
-**Goal**: Enable users to query their todos using natural language ("What's due today?", "Show overdue tasks")
+**Purpose**: All agent logic in single chat.py file, reusing TodoService
 
-**Independent Test**: Create todos with different due dates, ask "What's due tomorrow?", "Show completed tasks", verify correct filtered results
+**Dependencies**: T001, T005, T006
 
-### Implementation for User Story 3
+### Agent Context & Tools
 
-#### Backend: AnalyticsAgent with Query Tools
+- [ ] T011 Add imports to `backend/app/api/v1/chat.py`:
+  - `from agents import Agent, Runner, function_tool, RunContext`
+  - `from app.services.todo_service import TodoService`
+  - `from app.schemas.todo import TodoCreate, TodoUpdate, TodoResponse, TodoStats`
+  - `from app.api.deps import get_current_user, get_session`
 
-- [ ] T066 [P] [US3] Define FilterByDateInput and FilterByDateOutput models in backend/app/agents/models.py
-- [ ] T067 [P] [US3] Define FilterByStatusInput and FilterByStatusOutput models in backend/app/agents/models.py
-- [ ] T068 [P] [US3] Define TodoStatsOutput model in backend/app/agents/models.py
-- [ ] T069 [P] [US3] Implement filter_todos_by_date function tool in backend/app/agents/tools.py
-- [ ] T070 [P] [US3] Implement filter_todos_by_status function tool in backend/app/agents/tools.py
-- [ ] T071 [P] [US3] Implement get_todo_statistics function tool in backend/app/agents/tools.py
-- [ ] T072 [US3] Define AnalyticsAgent in backend/app/agents/agents.py with analytics tools
-- [ ] T073 [US3] Add AnalyticsAgent instructions for query interpretation and filtering
-- [ ] T074 [US3] Attach guardrails (user_authorization, todo_ownership) to AnalyticsAgent
+- [ ] T012 Define `AgentContext` dataclass in chat.py:
+  ```python
+  @dataclass
+  class AgentContext:
+      user_id: str
+      session: AsyncSession  # PostgreSQL session for TodoService
+  ```
 
-#### Backend: Agent Handoffs
+- [ ] T013 Implement `create_todo` function tool in chat.py:
+  - Inputs: title (str), description (str, optional), priority (str, default "MEDIUM")
+  - Uses `ctx.context.session` and `ctx.context.user_id`
+  - Calls `TodoService.create_todo(session, TodoCreate(...), user_id)`
+  - Returns todo dict for agent
 
-- [ ] T075 [US3] Add handoff(AnalyticsAgent) to TodoManagerAgent handoffs list
-- [ ] T076 [US3] Update TodoManagerAgent instructions with triage policy (when to handoff to Analytics)
-- [ ] T077 [US3] Update runner.py to support agent handoffs (if not already handled by SDK)
-- [ ] T078 [US3] Add handoff event logging in runner.py for observability
+- [ ] T014 [P] Implement `list_todos` function tool in chat.py:
+  - No inputs
+  - Calls `TodoService.get_todos(session, user_id)`
+  - Returns list of todo dicts
 
-#### Frontend: Query Results Display
+- [ ] T015 [P] Implement `update_todo` function tool in chat.py:
+  - Inputs: todo_id (int), title (str, optional), description (str, optional), completed (bool, optional), priority (str, optional)
+  - Calls `TodoService.update_todo(session, todo_id, TodoUpdate(...), user_id)`
+  - Returns updated todo dict
 
-- [ ] T079 [US3] Update ChatMessage component to render todo lists (from analytics queries)
-- [ ] T080 [US3] Add todo count badges to ChatMessage for statistics display
-- [ ] T081 [US3] Style filtered todo lists with TailwindCSS (overdue in red, completed in green)
+- [ ] T016 [P] Implement `delete_todo` function tool in chat.py:
+  - Input: todo_id (int)
+  - Calls `TodoService.delete_todo(session, todo_id, user_id)`
+  - Returns confirmation message
 
-**Checkpoint**: All three user stories are now independently functional - full chatbot capabilities complete
+- [ ] T017 [P] Implement `get_stats` function tool in chat.py:
+  - No inputs
+  - Calls `TodoService.get_stats(session, user_id)`
+  - Returns stats dict (total, pending, completed)
+
+### Agent Definition
+
+- [ ] T018 Define `todo_agent` in chat.py:
+  - Name: "TodoAgent"
+  - Instructions: Casual tone instructions (see plan.md for full text)
+  - Tools: [create_todo, list_todos, update_todo, delete_todo, get_stats]
+  - Model: "gpt-4o-mini" (cost-effective)
+
+### Chat Router Endpoints
+
+- [ ] T019 Create FastAPI router in chat.py:
+  - `router = APIRouter(prefix="/chat", tags=["chat"])`
+  - Call `init_session_db()` at module level
+
+- [ ] T020 Implement `POST /chat/message` endpoint:
+  - Request body: ChatRequest
+  - Dependencies: get_current_user, get_session (PostgreSQL)
+  - Load SQLite session: `session_data = get_user_session(current_user.id)`
+  - Create AgentContext with user_id and session
+  - Run agent with session: `result = await Runner.run(todo_agent, message.content, context=context)`
+  - Save updated session: `save_user_session(current_user.id, result.session_data)`
+  - Return ChatResponse with result.final_output
+
+- [ ] T021 Add user-friendly error handling in chat endpoint:
+  - Catch agent exceptions → "Sorry, I couldn't complete that. Please try again."
+  - Catch TodoNotFoundException → "Hmm, I couldn't find that todo. Want me to show your list?"
+  - Log errors for debugging (don't expose to user)
+
+- [ ] T022 [P] Implement `DELETE /chat/session` endpoint:
+  - Clear chat history for current user
+  - Call `clear_user_session(current_user.id)`
+  - Return `{"message": "Chat history cleared"}`
+
+### Router Registration
+
+- [ ] T023 Update `backend/app/api/v1/router.py`:
+  - Import chat router: `from app.api.v1 import chat`
+  - Include router: `router.include_router(chat.router)`
 
 ---
 
-## Phase 6: Polish & Cross-Cutting Concerns
+## Phase 5: Frontend - Chat Types & API Client
 
-**Purpose**: Improvements that affect multiple user stories and production readiness
+**Purpose**: TypeScript types and API client for chat
 
-### Observability & Monitoring
+- [ ] T024 Add chat types to `frontend/lib/types.ts`:
+  ```typescript
+  export interface ChatMessage {
+    role: "user" | "assistant"
+    content: string
+    timestamp: Date
+  }
 
-- [ ] T082 [P] Add set_tracing_export_api_key() to backend/app/agents/config.py for OpenAI tracing
-- [ ] T083 [P] Implement structured JSON logging in backend/app/agents/runner.py (user_id, session_id, agent_name, tool_name fields)
-- [ ] T084 [P] Add Prometheus metrics in backend/app/api/v1/chat.py (chat_requests_total, chat_response_duration_seconds counters)
-- [ ] T085 [P] Add correlation IDs (session_id) to all log messages
+  export interface ChatRequest {
+    content: string
+  }
 
-### Error Handling & Edge Cases
+  export interface ChatResponse {
+    message: string
+    todos_affected?: Todo[]
+  }
+  ```
 
-- [ ] T086 [P] Add MaxTurnsExceeded exception handling to runner with user-friendly message
-- [ ] T087 [P] Add OutputGuardrailTripwireTriggered handling with security logging
-- [ ] T088 [P] Handle ambiguous commands in TodoManagerAgent (ask clarifying questions)
-- [ ] T089 Add retry logic for transient tool failures (network errors, timeouts)
+- [ ] T025 Add chat API methods to `frontend/lib/api-client.ts`:
+  ```typescript
+  chat: {
+    sendMessage: (content: string) => apiRequest<ChatResponse>("/chat/message", {
+      method: "POST",
+      body: JSON.stringify({ content })
+    }),
+    clearHistory: () => apiRequest<{message: string}>("/chat/session", {
+      method: "DELETE"
+    })
+  }
+  ```
 
-### Frontend Polish
+---
 
-- [ ] T090 [P] Add responsive design verification for chat UI (mobile 320px+, desktop 1024px+)
-- [ ] T091 [P] Add empty state message to ChatWindow ("Start a conversation to manage your todos")
-- [ ] T092 [P] Add rate limit error display in useChat hook (429 → "Too many requests, please wait")
-- [ ] T093 [P] Add session timeout handling in useChat (auto-reset after 24 hours)
-- [ ] T094 Add shadcn/ui Button, Card, Input components to chat UI if not already using
+## Phase 6: Frontend - Chat Components
 
-### Documentation & Deployment
+**Purpose**: Create floating chat UI components
 
-- [ ] T095 [P] Create backend smoke test script at backend/scripts/smoke_test.py per agent-architecture-plan.md
-- [ ] T096 [P] Add agent setup instructions to backend/README.md (OPENAI_API_KEY, .agent-sessions/ setup)
-- [ ] T097 [P] Document chat API endpoints in backend API documentation (OpenAPI schema)
-- [ ] T098 Update frontend/README.md with chat feature usage instructions
+**Dependencies**: T024, T025
 
-### Security Hardening
+### Floating Button & Drawer
 
-- [ ] T099 Verify todo_ownership_guardrail prevents cross-user access in all analytics tools
-- [ ] T100 Add input length validation (2000 char limit) to chat endpoint before agent processing
-- [ ] T101 Verify rate limiting works across multiple sessions (test 31 requests in 1 minute)
-- [ ] T102 Add security audit logging for guardrail trigger events
+- [ ] T026 Create `frontend/components/chat/ChatButton.tsx`:
+  - "use client" directive
+  - Floating button fixed at bottom-right corner
+  - Props: onClick (callback), isOpen (boolean)
+  - Icon: chat bubble or message icon
+  - Style: rounded, primary color, shadow
+  - Animate on hover
+
+- [ ] T027 Create `frontend/components/chat/ChatDrawer.tsx`:
+  - "use client" directive
+  - Props: isOpen (boolean), onClose (callback), children
+  - Slides in from right side (or bottom on mobile)
+  - Backdrop overlay (click to close)
+  - Header with title "Chat Assistant" and close button
+  - Use shadcn/ui Sheet component if available, or custom implementation
+
+### Chat Content Components
+
+- [ ] T028 [P] Create `frontend/components/chat/ChatMessage.tsx`:
+  - Props: message (ChatMessage)
+  - User messages: right-aligned, primary background
+  - Assistant messages: left-aligned, secondary background
+  - Show timestamp (optional, on hover)
+  - Use TailwindCSS for styling
+
+- [ ] T029 [P] Create `frontend/components/chat/ChatInput.tsx`:
+  - Props: onSend (callback), disabled (boolean)
+  - Text input with send button
+  - Handle Enter key to send (Shift+Enter for newline)
+  - Clear input after send
+  - Disable while loading
+  - Use TailwindCSS for styling
+
+- [ ] T030 [P] Create `frontend/components/chat/ChatLoading.tsx`:
+  - Animated dots or spinner
+  - Text: "Thinking..."
+  - Use TailwindCSS for styling
+
+### Chat Window Container
+
+- [ ] T031 Create `frontend/components/chat/ChatWindow.tsx`:
+  - "use client" directive
+  - Render: ChatMessage list, ChatLoading (when loading), ChatInput
+  - Auto-scroll to bottom on new messages
+  - Empty state: "Hi! I can help you manage your todos. Try saying 'show my todos' or 'add a task to buy groceries'"
+  - "Clear chat" button in header (calls clearHistory API)
+
+---
+
+## Phase 7: Frontend - Chat Hook
+
+**Purpose**: Custom hook for chat state management
+
+**Dependencies**: T025, T031
+
+- [ ] T032 Create `frontend/hooks/use-chat.ts`:
+  - State: messages (ChatMessage[]), isLoading (boolean), error (string | null)
+  - Function: `sendMessage(content: string)`:
+    1. Add user message to state
+    2. Set isLoading = true
+    3. Call API
+    4. Add assistant response to state
+    5. Set isLoading = false
+  - Function: `clearHistory()`:
+    1. Call clearHistory API
+    2. Reset messages to empty array
+  - Handle API errors → set user-friendly error message
+  - Return: { messages, isLoading, error, sendMessage, clearHistory }
+
+- [ ] T033 Update ChatWindow.tsx to use useChat hook:
+  - Replace any local state with hook
+  - Connect ChatInput.onSend to sendMessage
+  - Connect "Clear chat" to clearHistory
+  - Display error message if present (toast or inline)
+
+---
+
+## Phase 8: Dashboard Integration
+
+**Purpose**: Add floating chat to dashboard
+
+**Dependencies**: T033
+
+- [ ] T034 Create `frontend/components/chat/ChatContainer.tsx`:
+  - "use client" directive
+  - State: isOpen (boolean)
+  - Render ChatButton + ChatDrawer + ChatWindow
+  - Toggle isOpen on button click
+  - This is the main component to import into dashboard
+
+- [ ] T035 Update `frontend/app/dashboard/layout.tsx`:
+  - Import ChatContainer component
+  - Add ChatContainer at the end of layout (after children)
+  - This makes chat available on all dashboard pages
+
+- [ ] T036 [P] Create `frontend/components/chat/index.ts` barrel export:
+  - Export ChatContainer as default
+  - Export individual components for flexibility
+
+---
+
+## Phase 9: Testing & Verification
+
+**Purpose**: Manual testing and verification
+
+- [ ] T037 Test backend endpoint manually:
+  - Start backend: `uv run uvicorn app.main:app --reload`
+  - Test with curl (first message - creates session):
+    ```bash
+    curl -X POST http://localhost:8000/api/v1/chat/message \
+      -H "Authorization: Bearer <jwt>" \
+      -H "Content-Type: application/json" \
+      -d '{"content": "Create a todo to test the chatbot"}'
+    ```
+  - Test with follow-up (uses existing session):
+    ```bash
+    curl -X POST http://localhost:8000/api/v1/chat/message \
+      -H "Authorization: Bearer <jwt>" \
+      -H "Content-Type: application/json" \
+      -d '{"content": "Now mark it as complete"}'
+    ```
+  - Verify session persists (agent remembers previous message)
+
+- [ ] T038 [P] Test frontend integration:
+  - Start frontend: `npm run dev`
+  - Log in and navigate to dashboard
+  - Click floating chat button
+  - Send message and verify response
+  - Test conversation continuity (multiple messages)
+  - Test "clear chat" button
+  - Test closing and reopening drawer
+
+- [ ] T039 Test edge cases:
+  - Unauthenticated access (should fail with 401)
+  - Empty message (should handle gracefully)
+  - Very long message (should handle or truncate)
+  - Rapid messages (should queue or handle)
+  - Session expiry (after 24 hours)
 
 ---
 
 ## Dependencies & Execution Order
 
-### Phase Dependencies
+### Critical Path
 
-- **Setup (Phase 1)**: No dependencies - can start immediately
-- **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
-- **User Stories (Phase 3-5)**: All depend on Foundational phase completion
-  - **US1 (P1)** can start after Phase 2 - No dependencies on other stories
-  - **US2 (P2)** can start after Phase 2 - Extends US1 but independently testable
-  - **US3 (P3)** can start after Phase 2 - Uses US1/US2 tools but independently testable
-- **Polish (Phase 6)**: Depends on desired user stories being complete
-
-### User Story Dependencies
-
-- **User Story 1 (P1) - Todo Creation**: Can start after Foundational (Phase 2) - INDEPENDENT
-- **User Story 2 (P2) - Todo Management**: Can start after Foundational (Phase 2) - INDEPENDENT (adds more tools to same agent)
-- **User Story 3 (P3) - Conversational Queries**: Can start after Foundational (Phase 2) - INDEPENDENT (new agent with handoffs)
-
-### Within Each User Story
-
-User Story 1:
-- T021-T022 (models) before T023-T024 (tools)
-- T023-T024 (tools) before T025 (agent definition)
-- T025 (agent) before T028 (runner)
-- T028 (runner) before T030 (API endpoint)
-- T037-T039 (components) can be parallel
-- T037-T041 (UI) before T043 (hook)
-- T043 (hook) before T049 (dashboard integration)
-
-User Story 2:
-- T052-T054 (models) before T055-T057 (tools)
-- T055-T057 (tools) before T058 (agent update)
-- T058 (agent) before T059 (instructions)
-- T062-T063 (UI updates) can be parallel
-
-User Story 3:
-- T066-T068 (models) before T069-T071 (tools)
-- T069-T071 (tools) before T072 (agent definition)
-- T072 (Analytics agent) before T075 (handoff setup)
-- T075-T076 (handoffs) before T077 (runner update)
-- T079-T081 (UI updates) can be parallel
+```
+T001 (install) → T003-T004 (setup) → T005 (schemas) → T006-T010 (SQLite) → T011-T018 (agent) → T019-T023 (router)
+                                                                                                      ↓
+T024-T025 (types/api) → T026-T031 (components) → T032-T033 (hook) → T034-T036 (integration)
+```
 
 ### Parallel Opportunities
 
-**Setup Phase (Phase 1)**:
-- T002, T003, T004, T005 can all run in parallel
+**Phase 1**: T002, T003, T004 can run in parallel
+**Phase 3**: T007, T008, T009 can run in parallel (session functions)
+**Phase 4**: T014, T015, T016, T017 can run in parallel (tools)
+**Phase 6**: T028, T029, T030 can run in parallel (chat components)
+**Phase 8**: T036 can run parallel to T035
+**Phase 9**: T037, T038 can run in parallel
 
-**Foundational Phase (Phase 2)**:
-- T007, T008, T009 can run in parallel
-- T010, T011, T012, T013 can run in parallel (all guardrails)
-- T018, T019, T020 can run in parallel (all frontend foundation)
+### Suggested Execution Groups
 
-**User Story 1**:
-- T021, T022 can run in parallel (models)
-- T037, T038, T039 can run in parallel (UI components)
+**Group 1 (Backend Setup)**:
+- T001 → T002, T003, T004 (parallel)
 
-**User Story 2**:
-- T052, T053, T054 can run in parallel (models)
-- T055, T056, T057 can run in parallel (tools)
+**Group 2 (Backend Schemas & Sessions)**:
+- T005 → T006 → T007, T008, T009 (parallel) → T010
 
-**User Story 3**:
-- T066, T067, T068 can run in parallel (models)
-- T069, T070, T071 can run in parallel (tools)
-- T079, T080, T081 can run in parallel (UI updates)
+**Group 3 (Backend Agent & Tools)**:
+- T011 → T012 → T013, T014, T015, T016, T017 (parallel) → T018
 
-**Polish Phase (Phase 6)**:
-- T082, T083, T084, T085 can run in parallel (observability)
-- T086, T087, T088, T089 can run in parallel (error handling)
-- T090, T091, T092, T093, T094 can run in parallel (frontend polish)
-- T095, T096, T097, T098 can run in parallel (documentation)
+**Group 4 (Backend Router)**:
+- T019 → T020 → T021, T022 (parallel) → T023
 
----
+**Group 5 (Frontend Foundation)**:
+- T024 → T025
 
-## Parallel Example: User Story 1
+**Group 6 (Frontend Components)**:
+- T026 → T027 (drawer depends on button design)
+- T028, T029, T030 (parallel)
+- T031 (after T028-T030)
 
-```bash
-# After Foundational phase completes, these can run in parallel:
+**Group 7 (Frontend Integration)**:
+- T032 → T033 → T034 → T035, T036 (parallel)
 
-# Terminal 1: Backend models and tools
-task T021  # CreateTodoInput model
-task T022  # CreateTodoOutput model (parallel with T021)
-task T023  # create_todo tool (after T021, T022)
-task T024  # get_todos tool (parallel with T023)
-
-# Terminal 2: Backend agent and API
-task T025  # TodoManagerAgent definition (after T023, T024)
-task T026  # Agent instructions (parallel with T025)
-task T027  # Attach guardrails (after T025)
-task T028  # Agent runner (after T027)
-task T030  # Chat endpoint (after T028)
-
-# Terminal 3: Frontend components (can start immediately after Phase 2)
-task T037  # ChatMessage component
-task T038  # ChatInput component (parallel with T037)
-task T039  # AgentStatus component (parallel with T037, T038)
-task T040  # MessageList component (after T037)
-task T041  # ChatWindow component (after T037-T040)
-
-# Terminal 4: Frontend state management
-task T043  # useChat hook (after T041)
-task T044  # sendMessage function (parallel with T043)
-task T045  # isLoading state (parallel with T043, T044)
-```
-
-**Parallel Execution Strategy**: With 4 developers, User Story 1 can be completed with minimal blocking. Models → Tools → Agent → API is the critical path, while UI can proceed independently.
-
----
-
-## Implementation Strategy
-
-### MVP Scope (Recommended First Iteration)
-
-**Phase 1 + Phase 2 + Phase 3 (User Story 1 only)**
-
-This delivers the core value: Users can create todos via natural language chat on /dashboard.
-
-**Estimated Tasks**: T001-T051 (51 tasks)
-
-**Why this is MVP**:
-- Demonstrates agent functionality (natural language processing, tool execution)
-- Delivers immediate user value (faster todo creation vs forms)
-- Tests all infrastructure (agents, tools, guardrails, sessions, API, UI)
-- Independently testable and deployable
-
-### Incremental Delivery
-
-**Iteration 2**: Add Phase 4 (User Story 2) - CRUD operations
-- **Tasks**: T052-T065 (14 tasks)
-- **Value**: Complete todo management without leaving chat interface
-
-**Iteration 3**: Add Phase 5 (User Story 3) - Analytics queries
-- **Tasks**: T066-T081 (16 tasks)
-- **Value**: Powerful query interface ("What's overdue?", "Show today's tasks")
-
-**Iteration 4**: Add Phase 6 (Polish)
-- **Tasks**: T082-T102 (21 tasks)
-- **Value**: Production-ready observability, security, documentation
-
-### Validation Checkpoints
-
-After each phase:
-1. Run smoke test (if available)
-2. Verify independent test criteria for each user story
-3. Check authentication/authorization works
-4. Verify guardrails prevent unauthorized access
-5. Measure response time (<3s for 95% of requests)
+**Group 8 (Testing)**:
+- T037, T038 (parallel) → T039
 
 ---
 
 ## Task Summary
 
-**Total Tasks**: 102
+**Total Tasks**: 39
 
 **Breakdown by Phase**:
-- Phase 1 (Setup): 5 tasks
-- Phase 2 (Foundational): 15 tasks
-- Phase 3 (US1 - Todo Creation): 31 tasks
-- Phase 4 (US2 - Todo Management): 14 tasks
-- Phase 5 (US3 - Queries): 16 tasks
-- Phase 6 (Polish): 21 tasks
+- Phase 1 (Setup): 4 tasks
+- Phase 2 (Schemas): 1 task
+- Phase 3 (SQLite Sessions): 5 tasks
+- Phase 4 (Agent & Tools): 13 tasks
+- Phase 5 (Types & API): 2 tasks
+- Phase 6 (Components): 6 tasks
+- Phase 7 (Hook): 2 tasks
+- Phase 8 (Dashboard): 3 tasks
+- Phase 9 (Testing): 3 tasks
 
-**Breakdown by User Story**:
-- US1 (Natural Language Todo Creation): 31 tasks
-- US2 (Todo Management via Chat): 14 tasks
-- US3 (Conversational Todo Queries): 16 tasks
-- Infrastructure (Setup + Foundational): 20 tasks
-- Polish & Cross-cutting: 21 tasks
+**Parallel Opportunities**: 20 tasks can run in parallel within their phase
 
-**Parallel Opportunities**: 47 tasks marked with [P] can run in parallel within their phase
-
-**MVP Scope**: 51 tasks (Phase 1 + Phase 2 + Phase 3)
-
-**Critical Path**: Setup → Foundational → US1 Models → US1 Tools → US1 Agent → US1 API → US1 UI Integration
+**Estimated Implementation**: ~300-400 lines backend, ~400-500 lines frontend
 
 ---
 
-## Next Steps
+## Implementation Notes
 
-1. **Start with Phase 1 (Setup)**: Install dependencies and configure environment
-2. **Complete Phase 2 (Foundational)**: Build agent infrastructure (guardrails, sessions, base structure)
-3. **Implement User Story 1 (MVP)**: Deliver natural language todo creation
-4. **Validate MVP**: Test independently per acceptance criteria
-5. **Iterate**: Add US2, US3, and Polish based on priority and feedback
+### Backend Key Points
 
-**Ready to begin implementation!** 🚀
+1. **All code in chat.py** - agent, tools, sessions, router
+2. **SQLite for sessions** - separate from PostgreSQL (simpler, self-contained)
+3. **Reuse TodoService** - same auth, same patterns
+4. **User-friendly errors** - catch exceptions, return friendly messages
+5. **Session cleanup** - auto-delete after 24 hours
+
+### Frontend Key Points
+
+1. **Floating button + drawer** - non-intrusive, always accessible
+2. **ChatContainer** - single component to add to dashboard
+3. **useChat hook** - all state logic in one place
+4. **Auto-scroll** - always show latest message
+5. **Clear chat** - user can reset conversation
+
+### Testing Key Points
+
+1. **JWT required** - get token from Better Auth first
+2. **Test session persistence** - send multiple messages, verify context
+3. **Check SQLite file** - `backend/.agent-sessions/sessions.db`
+4. **Verify casual tone** - agent should respond friendly
+
+---
+
+**Tasks Status**: ✅ Ready for Implementation (v2.1)
+**Tasks Date**: 2026-01-21
+**Approved By**: Pending user review

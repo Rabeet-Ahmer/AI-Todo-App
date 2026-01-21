@@ -1,5 +1,6 @@
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/dashboard/AppSidebar"
+import { ChatContainer } from "@/components/chat"
 import { cookies } from "next/headers"
 import { requireAuth } from "@/actions/auth.actions"
 import { redirect } from "next/navigation"
@@ -36,6 +37,8 @@ export default async function DashboardLayout({
           {children}
         </main>
       </SidebarInset>
+      {/* AI Chat Assistant - Floating button + drawer */}
+      <ChatContainer />
     </SidebarProvider>
   )
 }

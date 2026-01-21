@@ -43,10 +43,23 @@ export async function apiRequest<T>(
 export const api = {
     get: <T>(endpoint: string, options?: RequestInit) =>
         apiRequest<T>(endpoint, { ...options, method: "GET" }),
-    post: <T>(endpoint: string, data: any, options?: RequestInit) =>
+    post: <T>(endpoint: string, data: unknown, options?: RequestInit) =>
         apiRequest<T>(endpoint, { ...options, method: "POST", body: JSON.stringify(data) }),
-    patch: <T>(endpoint: string, data: any, options?: RequestInit) =>
+    patch: <T>(endpoint: string, data: unknown, options?: RequestInit) =>
         apiRequest<T>(endpoint, { ...options, method: "PATCH", body: JSON.stringify(data) }),
     delete: <T>(endpoint: string, options?: RequestInit) =>
         apiRequest<T>(endpoint, { ...options, method: "DELETE" }),
+
+    // Chat API for AI Agent
+    chat: {
+        sendMessage: (content: string) =>
+            apiRequest<{ message: string; todos_affected?: unknown[] }>("/chat/message", {
+                method: "POST",
+                body: JSON.stringify({ content }),
+            }),
+        clearHistory: () =>
+            apiRequest<{ message: string }>("/chat/session", {
+                method: "DELETE",
+            }),
+    },
 };

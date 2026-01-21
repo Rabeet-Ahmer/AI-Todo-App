@@ -20,3 +20,19 @@ export interface ApiError {
   detail: string
   status_code?: number
 }
+
+// Chat types for AI Agent
+export interface ChatMessage {
+  role: "user" | "assistant"
+  content: string
+  timestamp: Date
+}
+
+export interface ChatRequest {
+  content: string
+}
+
+export interface ChatResponse {
+  message: string
+  todos_affected?: Todo[]
+}
